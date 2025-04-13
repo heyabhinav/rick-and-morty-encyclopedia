@@ -1,36 +1,60 @@
 const API_URL = "https://rickandmortyapi.com/api/character";
 let currentPage = 1;
+const perPage = 6;
+
+let allCharacters = [];
 
 const characterGrid = document.getElementById("character-grid");
 const prevBtn = document.getElementById("prev-btn");
 const nextBtn = document.getElementById("next-btn");
 const pageInfo = document.getElementById("page-info");
 
-function fetchCharacters(page) {
-    fetch(`${API_URL}?page=${page}`)
-        .then(res => res.json())
-        .then(data => {
-            renderCharacters(data.results);
-            pageInfo.textContent = `Page ${page}`;
-            prevBtn.disabled = !data.info.prev;
-            nextBtn.disabled = !data.info.next;
-        });
+async function fetchCharacters(apiPage = 1) {
+    const response = await fetch(`https://rickandmortyapi.com/api/character?page=${apiPage}`);
+    const data = await response.json();
+    allCharacters = [...allCharacters, ...data.results];
+    renderCharacters();
 }
 
-function renderCharacters(characters) {
-    characterGrid.innerHTML = "";
-    characters.forEach(char => {
+
+function renderCharacters() {
+    const start = (currentPage - 1) * perPage;
+    const end = start + perPage;
+    const currentCharacters = allCharacters.slice(start, end);
+
+    const container = document.getElementById("character-grid");
+    container.innerHTML = ""; 
+
+    currentCharacters.forEach(char => {
         const card = document.createElement("div");
         card.className = "card";
         card.innerHTML = `
-      <img src="${char.image}" alt="${char.name}">
-      <h3>${char.name}</h3>
-      <p>${char.species}</p>
-      <p>Status: ${char.status}</p>
-      <a href="character.html?id=${char.id}" target="_blank">Details</a>
-    `;
-        characterGrid.appendChild(card);
+            <img src="${char.image}" alt="${char.name}">
+            <h3>${char.name}</h3>
+            <p>${char.species} - ${char.status}</p>
+            <a href="details.html?id=${char.id}" target="_blank">Details</a>
+        `;
+        container.appendChild(card);
     });
+
+    updatePaginationControls();
+}
+
+function updatePaginationControls() {
+    const prevBtn = document.getElementById("prev");
+    const nextBtn = document.getElementById("next");
+
+    if (currentPage === 1) {
+        prevBtn.disabled = true;
+    } else {
+        prevBtn.disabled = false;
+    }
+
+    if (currentPage * perPage >= allCharacters.length) {
+        nextBtn.disabled = true;
+    } else {
+        nextBtn.disabled = false;
+    }
 }
 
 prevBtn.addEventListener("click", () => {
